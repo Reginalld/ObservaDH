@@ -1,0 +1,44 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from odhbackend.routers.oauth2_router import oauth2_router
+from odhbackend.routers.users_router import users_router
+
+# Metadados simplificados apenas para o seu escopo
+tags_metadata = [
+    {
+        "name": "oauth2",
+        "description": "Operações de autenticação e geração de tokens JWT."
+    },
+    {
+        "name": "users",
+        "description": "Gestão de usuários (Criação, Leitura e Atualização)."
+    }
+]
+
+# Lifespan simplificado (sem o agendador de tarefas de conteúdo)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Aqui você pode colocar lógicas de inicialização se precisar no futuro
+    yield
+
+# Inicialização da aplicação
+odhbackend = FastAPI(
+    title="OdhBackend - Security Module",
+    openapi_tags=tags_metadata, 
+    lifespan=lifespan
+)
+
+# Configuração de CORS (Mantive exatamente como o original)
+odhbackend.add_middleware(
+    middleware_class=CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+# Inclusão apenas das rotas de Segurança e Usuários
+odhbackend.include_router(router=oauth2_router)
+odhbackend.include_router(router=users_router)
