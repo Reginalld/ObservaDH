@@ -14,7 +14,6 @@ from logging import getLogger
 from logging import FileHandler
 from logging import Formatter
 
-# Removido: odhbackend.documents (Elasticsearch)
 from odhbackend.utils.environment_variables import LOGGING_LEVEL
 
 
@@ -76,7 +75,6 @@ def log(
         where=where
     )
     
-    # Como removemos o Elasticsearch, agora o log principal vai para o arquivo
     try:
         msg = f"[{where}] {message} | Status: {status_code} | Detail: {detail}"
         logger = get_logger(name=module_name)
@@ -88,5 +86,4 @@ def log(
         elif level == "CRITICAL": logger.critical(msg)
         
     except Exception as e:
-        # Fallback de erro no próprio sistema de log
         print(f"Erro ao registrar log: {e} {log_dict}")

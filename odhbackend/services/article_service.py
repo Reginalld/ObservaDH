@@ -1,13 +1,22 @@
 from typing import List, Optional
-from odhbackend.repositories.article_repository import ArticleRepository
+from odhbackend.models import User
+from odhbackend.domain.interfaces.article_repository import IArticleRepository
+from odhbackend.domain.dtos.article_dto import ArticleDTO
 
 class ArticleService:
-    def __init__(self):
-        self.repository = ArticleRepository()
+    """
+    Serviço de Artigos que coordena a lógica de negócio.
+    Ele depende da interface IArticleRepository e não do Elastic diretamente.
+    """
+
+    def __init__(self, repository: IArticleRepository) -> None:
+        self.repository = repository
 
     def get_paginated_feed(
         self,
+        current_user: User,
         page: int = 1,
+        size: int = 25,
         any_keywords: Optional[List[str]] = None,
         all_keywords: Optional[List[str]] = None,
         forbidden_keywords: Optional[List[str]] = None,
@@ -16,31 +25,31 @@ class ArticleService:
         end_time: Optional[str] = None
     ) -> dict:
         """
-        Processa os parâmetros de paginação e formata a resposta do repositório.
+        AR01: Processa o feed paginado.
         """
         size = 25
-        from_ = (page - 1) * size if page >= 1 else 0
+        skip = (page - 1) * size if page >= 1 else 0
 
-        raw_result = self.repository.search_articles(
+        raw_result = self.repository.search(
+            current_user=current_user,
             any_keywords=any_keywords,
             all_keywords=all_keywords,
             forbidden_keywords=forbidden_keywords,
             source=source,
             start_time=start_time,
             end_time=end_time,
-            from_=from_,
-            size=size
+            skip=skip,
+            limit=size
         )
 
         hits_data = raw_result.get("hits", {})
         total_results = hits_data.get("total", {}).get("value", 0)
         hits = hits_data.get("hits", [])
 
-        articles = []
-        for hit in hits:
-            article = hit["_source"]
-            article["id"] = hit["_id"]  # Injeta o ID para o front-end
-            articles.append(article)
+        articles = [
+            ArticleDTO(id=hit["_id"], **hit["_source"]) 
+            for hit in hits
+        ]
 
         total_pages = (total_results + size - 1) // size
 
@@ -52,13 +61,79 @@ class ArticleService:
             "total_pages": total_pages,
         }
 
-    def get_single_article(self, article_id: str) -> dict:
+    def get_article_detail(
+        self, 
+        current_user: User,
+        article_id: str
+    ) -> dict:
         """
-        Busca uma notícia única e padroniza a resposta.
+        AR02: Recupera os detalhes de um artigo único.
         """
-        article = self.repository.get_article_by_id(article_id)
-        if not article:
+        article_source = self.repository.get_by_id(
+            current_user=current_user,
+            article_id=article_id
+        )
+        
+        if not article_source:
             return {"status": "error", "message": "Artigo não encontrado."}
         
-        article["id"] = article_id
-        return {"status": "success", "data": article}
+        article_dto = ArticleDTO(id=article_id, **article_source)
+        
+        return {"status": "success", "data": article_dto}
+    
+    def search_full(
+        self,
+        current_user: User,
+        any_keywords: Optional[List[str]] = None,
+        all_keywords: Optional[List[str]] = None,
+        forbidden_keywords: Optional[List[str]] = None,
+        source: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None
+    ) -> dict:
+        """
+        AR03: Busca geral de artigos (sem paginação estrita, limite de 100).
+        """
+        raw_result = self.repository.search(
+            current_user=current_user,
+            any_keywords=any_keywords,
+            all_keywords=all_keywords,
+            forbidden_keywords=forbidden_keywords,
+            source=source,
+            start_time=start_time,
+            end_time=end_time,
+            skip=0,
+            limit=100
+        )
+
+        hits = raw_result.get("hits", {}).get("hits", [])
+        articles = [ArticleDTO(id=hit["_id"], **hit["_source"]) for hit in hits]
+
+        return {"articles": articles}
+
+    def get_sources_aggregation(
+        self,
+        current_user: User,
+        any_keywords: Optional[List[str]] = None,
+        all_keywords: Optional[List[str]] = None,
+        forbidden_keywords: Optional[List[str]] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None
+    ) -> dict:
+        """
+        AR04: Processa a agregação de fontes do Elasticsearch.
+        """
+        raw_result = self.repository.count_by_source(
+            current_user=current_user,
+            any_keywords=any_keywords,
+            all_keywords=all_keywords,
+            forbidden_keywords=forbidden_keywords,
+            start_time=start_time,
+            end_time=end_time
+        )
+        
+        buckets = raw_result.get("aggregations", {}).get("sources", {}).get("buckets", [])
+        
+        formatted_sources = {b["key"]: b["doc_count"] for b in buckets}
+
+        return {"sources": formatted_sources}

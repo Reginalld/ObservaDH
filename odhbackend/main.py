@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from odhbackend.routers.oauth2_router import oauth2_router
 from odhbackend.routers.users_router import users_router
-from odhbackend.routers.article_router import router as article_router
+from odhbackend.routers.article_router import articles_router
 
 # Metadados simplificados apenas para o seu escopo
 tags_metadata = [
@@ -47,4 +47,4 @@ odhbackend.add_middleware(
 # Inclusão apenas das rotas de Segurança e Usuários
 odhbackend.include_router(router=oauth2_router)
 odhbackend.include_router(router=users_router)
-odhbackend.include_router(router=article_router)
+odhbackend.include_router(router=articles_router)
