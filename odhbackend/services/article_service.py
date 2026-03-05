@@ -1,7 +1,6 @@
 from typing import List, Optional
-from odhbackend.models import User
+from odhbackend.models import User, Article
 from odhbackend.domain.interfaces.article_repository import IArticleRepository
-from odhbackend.domain.dtos.article_dto import ArticleDTO
 
 class ArticleService:
     """
@@ -47,7 +46,7 @@ class ArticleService:
         hits = hits_data.get("hits", [])
 
         articles = [
-            ArticleDTO(id=hit["_id"], **hit["_source"]) 
+            Article(id=hit["_id"], **hit["_source"]) 
             for hit in hits
         ]
 
@@ -77,9 +76,8 @@ class ArticleService:
         if not article_source:
             return {"status": "error", "message": "Artigo não encontrado."}
         
-        article_dto = ArticleDTO(id=article_id, **article_source)
         
-        return {"status": "success", "data": article_dto}
+        return {"status": "success", "data": Article(id=article_id, **article_source)}
     
     def search_full(
         self,

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import enum
 from sqlmodel import SQLModel, Field, Relationship, Enum, Column
 
@@ -91,3 +91,29 @@ class UserUpdate(UserBase):
 
 class UserList(ListBase):
     users: list["UserPublic"] = Field()
+
+class Comment(SQLModel):
+    """Representa um comentário no artigo"""
+    user: str
+    comment: str
+    position: Optional[int] = None
+
+class Article(SQLModel):
+    """O 'Contrato' do Artigo. Funciona como DTO de saída."""
+    id: str = Field(primary_key=True)
+    title: Optional[str] = None
+    content: str
+    source: str
+    link: Optional[str] = None
+    timestamp: Optional[str] = None
+    keywords: Optional[List[str]] = None
+    comments: Optional[List[Comment]] = None
+    hash: Optional[str] = None
+
+class PaginatedArticleResponse(SQLModel):
+    """Resposta padrão para o Feed"""
+    articles: List[Article]
+    total: int
+    page: int
+    size: int
+    total_pages: int
