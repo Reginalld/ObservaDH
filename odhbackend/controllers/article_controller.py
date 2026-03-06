@@ -4,8 +4,8 @@ from odhbackend.exceptions.http_exception import HTTPException
 from odhbackend.services.article_service import ArticleService
 
 class ArticleController:
-    def __init__(self):
-        self.service = ArticleService()
+    def __init__(self, service: ArticleService):
+        self.service = service
 
     def get_feed(
         self,
@@ -41,7 +41,9 @@ class ArticleController:
                 )
                 
             return result
-            
+
+        except HTTPException:
+            raise
         except Exception as e:
             HTTPException.raise_internal_server_error(e=e, where=where)
             return None
@@ -56,7 +58,7 @@ class ArticleController:
         """
         where = "AR02C"
         try:
-            result = self.service.get_single_article(
+            result = self.service.get_article_detail(
                 current_user=current_user,
                 article_id=article_id
             )
@@ -86,7 +88,7 @@ class ArticleController:
         """AR03C"""
         where = "AR03C"
         try:
-            result = self.service.search_articles(
+            result = self.service.search_full(
                 current_user=current_user,
                 any_keywords=any_keywords,
                 all_keywords=all_keywords,
@@ -119,7 +121,7 @@ class ArticleController:
         """AR04C"""
         where = "AR04C"
         try:
-            return self.service.get_sources_count(
+            return self.service.get_sources_aggregation(
                 current_user=current_user,
                 any_keywords=any_keywords,
                 all_keywords=all_keywords,
