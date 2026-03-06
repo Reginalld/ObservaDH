@@ -25,8 +25,22 @@ services:
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
 
+  mongodb:
+    image: mongo:latest
+    container_name: mongoo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpassword
+      MONGO_INITDB_DATABASE: mydatabase
+    volumes:
+      - mongo_data:/data/db
+
 volumes:
   postgres_data:
     driver: local
   elastic_data:
+    driver: local
+  mongo_data:
     driver: local
