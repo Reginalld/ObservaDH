@@ -208,3 +208,5 @@ __marimo__/
 
 reset_environment_static_data.py
 reset_revision.py
+
+alembic/versions
