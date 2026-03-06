@@ -19,7 +19,7 @@ users_router = APIRouter(tags=["users"])
 
 
 @users_router.post(
-    path="/users/",
+    path="/users",
     response_model=UserPublic,
     name="create_user",
     summary="US01: criar usuário",
@@ -38,56 +38,11 @@ async def create_user(
         user_create=user_create
     )
 
-
-@users_router.put(
-    path="/users/{user_id}",
-    response_model=UserPublic,
-    name="update_user",
-    summary="US02: atualizar usuário",
-    description="Atualiza usuário. "
-                "É preciso possuir atribuição de perfil 'Coordenação'. "
-                "Atualiza dados na base relacional PostGIS."
-)
-async def update_user(
-        current_user: Annotated[User, Depends(OAuth2Controller(
-            required_roles=[RoleEnum.coordination]
-        ).get_current_user)],
-        user_id: str,
-        user_update: UserUpdate
-) -> UserPublic:
-    return UserController().update_user(
-        current_user=current_user,
-        user_id=user_id,
-        user_update=user_update
-    )
-
-
 @users_router.get(
-    path="/users/{user_id}",
-    response_model=UserPublic,
-    name="read_user",
-    summary="US03: recuperar usuário",
-    description="Recupera usuário. "
-                "É preciso possuir atribuição de perfil 'Coordenação'. "
-                "Recupera dados da base relacional PostGIS."
-)
-async def read_user(
-        current_user: Annotated[User, Depends(OAuth2Controller(
-            required_roles=[RoleEnum.coordination]
-        ).get_current_user)],
-        user_id: str
-) -> UserPublic:
-    return UserController().read_user(
-        current_user=current_user,
-        user_id=user_id
-    )
-
-
-@users_router.get(
-    path="/users/",
+    path="/users",
     response_model=UserList,
     name="read_users",
-    summary="US04: recuperar usuários",
+    summary="US02: recuperar usuários",
     description="Recupera usuários. "
                 "É preciso possuir atribuição de perfil 'Coordenação'. "
                 "Recupera dados da base relacional PostGIS."
@@ -116,7 +71,7 @@ async def read_users(
     path="/me",
     response_model=UserPublic,
     name="read_current_user",
-    summary="US05: recuperar usuário atual",
+    summary="US03: recuperar usuário atual",
     description="Recupera usuário atual. "
                 "Recupera dados da base relacional PostGIS."
 )
@@ -126,3 +81,46 @@ async def read_current_user(
     user_roles = getattr(current_user, "user_roles", []) or []
     roles = [user_role.role for user_role in user_roles]
     return UserPublic(**current_user.model_dump(), roles=roles)
+
+@users_router.put(
+    path="/users/{user_id}",
+    response_model=UserPublic,
+    name="update_user",
+    summary="US04: atualizar usuário",
+    description="Atualiza usuário. "
+                "É preciso possuir atribuição de perfil 'Coordenação'. "
+                "Atualiza dados na base relacional PostGIS."
+)
+async def update_user(
+        current_user: Annotated[User, Depends(OAuth2Controller(
+            required_roles=[RoleEnum.coordination]
+        ).get_current_user)],
+        user_id: str,
+        user_update: UserUpdate
+) -> UserPublic:
+    return UserController().update_user(
+        current_user=current_user,
+        user_id=user_id,
+        user_update=user_update
+    )
+
+
+@users_router.get(
+    path="/users/{user_id}",
+    response_model=UserPublic,
+    name="read_user",
+    summary="US05: recuperar usuário",
+    description="Recupera usuário. "
+                "É preciso possuir atribuição de perfil 'Coordenação'. "
+                "Recupera dados da base relacional PostGIS."
+)
+async def read_user(
+        current_user: Annotated[User, Depends(OAuth2Controller(
+            required_roles=[RoleEnum.coordination]
+        ).get_current_user)],
+        user_id: str
+) -> UserPublic:
+    return UserController().read_user(
+        current_user=current_user,
+        user_id=user_id
+    )
