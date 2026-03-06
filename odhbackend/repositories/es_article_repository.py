@@ -5,9 +5,9 @@ from odhbackend.domain.interfaces.article_repository import IArticleRepository
 from odhbackend.models import User
 
 class ESArticleRepository(IArticleRepository):
-    def __init__(self, client: Elasticsearch, index: str = "articles"):
+    def __init__(self, client: Elasticsearch):
         self.client = client
-        self.index = index
+        self.index_name = "articles"
 
     def _build_query(
         self,
@@ -81,7 +81,7 @@ class ESArticleRepository(IArticleRepository):
 
         try:
             return self.client.search(
-                index=self.index,
+                index=self.index_name,
                 query=query,
                 from_=skip,
                 size=limit,
@@ -99,7 +99,7 @@ class ESArticleRepository(IArticleRepository):
         """AR02R - Implementação da busca por ID único"""
         
         try:
-            response = self.client.get(index=self.index, id=article_id)
+            response = self.client.get(index=self.index_name, id=article_id)
             return response.get("_source")
         except Exception as e:
             print(f"[Elasticsearch Error] Falha ao buscar ID {article_id} AR02R: {e}")
@@ -138,7 +138,10 @@ class ESArticleRepository(IArticleRepository):
         }
 
         try:
-            return self.client.search(index=self.index, body=body)
+            return self.client.search(index=self.index_name, body=body)
         except Exception as e:
             print(f"[Elasticsearch Error] Falha na agregação AR03R: {e}")
             raise e
+        
+    def index(self, doc_id: str, document: dict):
+        return self.client.index(index=self.index_name, id=doc_id, document=document)
