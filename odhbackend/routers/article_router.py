@@ -1,5 +1,5 @@
 from typing import Annotated, List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 
 from odhbackend.models import User
 from odhbackend.models import Article
@@ -91,8 +91,34 @@ async def search_sources_by_keywords(
         end_time=end_time
     )
 
+@articles_router.post(
+    path="/post_article",
+    name="post_article",
+    summary="AR05: cadastrar novo artigo",
+    description="Recebe os dados brutos de um artigo, gera o hash de integridade e distribui os dados entre Elastic e MongoDB."
+)
+async def post_article(
+    current_user: Annotated[User, Depends(OAuth2Controller(required_roles=[]).get_current_user)],
+    article: Article,
+    service: Annotated[ArticleService, Depends(get_article_service)]
+):
+    try:
+
+        if not article.userId:
+            article.userId = current_user.id
+
+        response = service.index_document(article)
+        if response:
+            return {
+                "message": "Article submitted successfully",
+                "id": response.get("_id")
+            }
+        return {"status": "error", "message": "Falha ao indexar artigo."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @articles_router.get(
-    path="/{article_id}",
+    path="/get_articles_by_id/{article_id}",
     name="get_article_by_id",
     summary="AR02: recuperar artigo",
     description="Recupera um artigo específico pelo seu ID gerado no Elasticsearch."
