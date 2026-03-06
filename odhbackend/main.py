@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from odhbackend.routers.oauth2_router import oauth2_router
 from odhbackend.routers.users_router import users_router
 from odhbackend.routers.article_router import articles_router
+from odhbackend.services.nosql_data_store_service import init_mongo_db
 
-# Metadados simplificados apenas para o seu escopo
 tags_metadata = [
     {
         "name": "oauth2",
@@ -22,10 +22,10 @@ tags_metadata = [
     }
 ]
 
-# Lifespan simplificado (sem o agendador de tarefas de conteúdo)
+# Lifespan simplificado
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Aqui você pode colocar lógicas de inicialização se precisar no futuro
+    init_mongo_db()
     yield
 
 # Inicialização da aplicação
@@ -35,7 +35,7 @@ odhbackend = FastAPI(
     lifespan=lifespan
 )
 
-# Configuração de CORS (Mantive exatamente como o original)
+# Configuração de CORS
 odhbackend.add_middleware(
     middleware_class=CORSMiddleware,
     allow_origins=["http://localhost:3000"],
