@@ -1,6 +1,7 @@
 from typing import Optional, List
 import enum
-from sqlmodel import SQLModel, Field, Relationship, Enum, Column
+from pydantic import field_validator
+from sqlmodel import SQLModel, Field, Relationship, Enum, Column, UniqueConstraint
 
 
 class DefaultResponse(SQLModel):
@@ -80,6 +81,8 @@ class User(Base, UserBase, table=True):
         back_populates="user"
     )
 
+    keyword_lists: list["KeywordList"] = Relationship(back_populates="owner")
+
 class UserPublic(UserBase, Base):
     roles: list["RoleEnum"] = Field()
 
@@ -99,16 +102,28 @@ class Comment(SQLModel):
     position: Optional[int] = None
 
 class Article(SQLModel):
-    """O 'Contrato' do Artigo. Funciona como DTO de saída."""
-    id: str = Field(primary_key=True)
-    title: Optional[str] = None
-    content: str
-    source: str
-    link: Optional[str] = None
-    timestamp: Optional[str] = None
-    keywords: Optional[List[str]] = None
-    comments: Optional[List[Comment]] = None
+    id: Optional[str] = Field(default=None, primary_key=True) 
+    link: str
+    
+    userId: str = ""
+    keyword: Optional[str] = "geral" 
+    source: Optional[str] = "Desconhecida"
+    language: Optional[str] = "pt"
+    title: Optional[str] = "Sem Título"
+    content: Optional[str] = None
+    
+    comments: List[dict] = [] 
+    images: List[dict] = [] 
+    
     hash: Optional[str] = None
+    timestamp: Optional[str] = None
+
+    @field_validator("keyword", mode="before")
+    @classmethod
+    def ensure_keyword_is_string(cls, value):
+        if not isinstance(value, str) or value is None:
+            return "geral"
+        return value
 
 class PaginatedArticleResponse(SQLModel):
     """Resposta padrão para o Feed"""
@@ -117,3 +132,28 @@ class PaginatedArticleResponse(SQLModel):
     page: int
     size: int
     total_pages: int
+
+class Comments(SQLModel):
+    user: Optional[str] = None
+    comment: Optional[str] = None
+    position: Optional[int] = None
+
+class Images(SQLModel):
+    articleposition: str # Conforme o seu original: String!
+    image: str
+    caption: str
+
+class KeywordList(SQLModel, table=True):
+    __tablename__ = "keyword_list"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    keyword: str = Field(index=True, max_length=255)
+    
+    user_id: str = Field(foreign_key="user.id")
+
+    # Relacionamento de volta para o usuário
+    owner: Optional["User"] = Relationship(back_populates="keyword_lists")
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'keyword', name='user_keyword_uc'),
+    )
